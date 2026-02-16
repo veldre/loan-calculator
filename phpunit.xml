@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit bootstrap="vendor/autoload.php"
-         colors="true">
-
+    colors="true">
     <testsuites>
-        <testsuite name="Loan Calculator Test Suite">
+        <testsuite name="Loan Calculator">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
