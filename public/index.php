@@ -107,57 +107,55 @@
                 </tbody>
             </table>
         </div>
+    </div>
+    
+    <script>
+        function loanApp() {
+            return {
+                form: {
+                    type: 'annuity',
+                    principal: '',
+                    months: '',
+                    apr: ''
+                },
+                result: null,
+                error: null,
 
-        </class=>
+                formatNumber(value) {
+                    return Number(value).toLocaleString('en-US', {
+                        style: 'currency',
+                        currency: 'EUR'
+                    });
+                },
 
-
-        <script>
-            function loanApp() {
-                return {
-                    form: {
-                        type: 'annuity',
-                        principal: '',
-                        months: '',
-                        apr: ''
-                    },
-                    result: null,
-                    error: null,
-
-                    formatNumber(value) {
-                        return Number(value).toLocaleString('en-US', {
-                            style: 'currency',
-                            currency: 'EUR'
+                async calculate() {
+                    try {
+                        const response = await fetch('calculation.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(this.form)
                         });
-                    },
 
-                    async calculate() {
-                        try {
-                            const response = await fetch('calculation.php', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify(this.form)
-                            });
+                        const data = await response.json();
 
-                            const data = await response.json();
-
-                            if (data.error) {
-                                this.error = data.error;
-                                this.result = null;
-                            } else {
-                                this.result = data;
-                                this.error = null;
-                            }
-                        } catch (error) {
-                            this.error = 'Error occured. Please try again.';
+                        if (data.error) {
+                            this.error = data.error;
                             this.result = null;
+                        } else {
+                            this.result = data;
+                            this.error = null;
                         }
+                    } catch (error) {
+                        this.error = 'Error occured. Please try again.';
+                        this.result = null;
                     }
                 }
             }
-        </script>
+        }
+    </script>
 
 </body>
 
