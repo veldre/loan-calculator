@@ -10,8 +10,8 @@ header('Content-Type: application/json');
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (empty($data['type']) || $data['principal'] === '' || $data['months'] === '' || $data['apr'] === '') {
-    echo json_encode(['error' => 'Please fill in all required fields.']);
-    
+    echo json_encode(['error' => 'Please fill all required fields.']);
+
     exit;
 }
 
