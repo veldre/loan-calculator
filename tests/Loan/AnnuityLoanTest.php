@@ -53,6 +53,15 @@ class AnnuityLoanTest extends TestCase
         $this->assertEquals(self::ZERO_INTEREST_LOAN_PRINCIPAL, $this->zeroInterestLoan->getTotalRepayment());
     }
 
+    public function test_total_principal_paid_equals_original_principal(): void
+    {
+        $schedule = $this->standardLoan->getAmortizationSchedule();
+
+        $principal = array_column($schedule, 'principal');
+
+        $this->assertEquals(self::STANDARD_LOAN_PRINCIPAL, round(array_sum($principal), 2));
+    }
+
     public function test_total_interest_equals_sum_of_schedule_interest(): void
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();

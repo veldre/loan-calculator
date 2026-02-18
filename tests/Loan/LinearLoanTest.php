@@ -57,6 +57,15 @@ class LinearLoanTest extends TestCase
         $this->assertEquals(0.00, $this->zeroInterestLoan->getTotalInterest());
     }
 
+    public function test_total_principal_paid_equals_original_principal(): void
+    {
+        $schedule = $this->standardLoan->getAmortizationSchedule();
+
+        $principal = array_column($schedule, 'principal');
+
+        $this->assertEquals(self::STANDARD_LOAN_PRINCIPAL, round(array_sum($principal), 2));
+    }
+
     public function test_zero_interest_payments_equal_principal_portion(): void
     {
         $schedule = $this->zeroInterestLoan->getAmortizationSchedule();

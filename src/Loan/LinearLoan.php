@@ -14,9 +14,17 @@ class LinearLoan implements LoanInterface
     // Returns the first payment as for linear loans monthly payment is not constant
     public function getMonthlyPayment(): float
     {
-        $schedule = $this->getAmortizationSchedule();
+        $monthlyRate = $this->apr / 100 / 12;
 
-        return $schedule[0]['payment'];
+        $principalPart = round($this->principal / $this->months, 2);
+
+        if ($this->apr === 0.0) {
+            return $principalPart;
+        }
+
+        $interest = round($this->principal * $monthlyRate, 2);
+
+        return round($principalPart + $interest, 2);
     }
 
     public function getTotalRepayment(): float
