@@ -1,7 +1,7 @@
 # Loan Calculator
 
 Plain PHP loan amortization calculator supporting annuity and linear loans, with amortization schedules. Includes a lightweight frontend (Tailwind + Alpine.js) for interacting with calculations. The architecture is designed to be easily extensible, allowing additional loan types to be added in the future with minimal changes.
----
+
 
 ## How to Run Locally
 
@@ -80,6 +80,6 @@ Breakdown:
 
 ---
 
-## Application Preview
+## Preview
 
 ![Loan Calculator Screenshot](assets/loan-calculator.png)
