@@ -16,7 +16,7 @@ composer install
 vendor/bin/phpunit
 
 ### Run the Application
-php -S localhost:8000
+php -S localhost:8000 -t public
 
 Then open:
 http://localhost:8000
