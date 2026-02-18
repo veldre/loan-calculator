@@ -25,8 +25,8 @@ http://localhost:8000
 
 ## Architecture Overview
 
-The backend is implemented in plain PHP without using a framework.
-Backend is structured using OOP in plain PHP. A factory class (LoanFactory) is responsible for creating the correct loan type (Annuity or Linear) based on user input. Both loan types implement LoanInterface. Invalid loan parameters are handled through a custom InvalidLoanException. The calculation logic is covered by PHPUnit tests to verify correctness and edge cases. The frontend communicates with the backend via a JSON POST request to calculation.php, and the server returns calculated results in JSON format.
+The backend is implemented without using a framework.
+Backend is structured using OOP in plain PHP. A factory class (`LoanFactory`) is responsible for creating the correct loan type (Annuity or Linear) based on user input. Both loan types implement `LoanInterface`. Invalid loan parameters are handled through a custom `InvalidLoanException`. The calculation logic is covered by PHPUnit tests to verify correctness and edge cases. The frontend communicates with the backend via a JSON POST request to `calculation.php`, and the server returns calculated results in JSON format.
 
 ---
 
