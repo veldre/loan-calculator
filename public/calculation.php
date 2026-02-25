@@ -4,6 +4,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Exceptions\InvalidLoanException;
 use App\Loan\LoanFactory;
+use App\Loan\LoanType;
 
 header('Content-Type: application/json');
 
@@ -27,7 +28,14 @@ if (! is_numeric($data['principal']) || ! is_numeric($data['months']) || ! is_nu
 try {
     $factory = new LoanFactory();
 
-    $loan = $factory->create($data['type'], (float) $data['principal'], (int) $data['months'], (float) $data['apr']);
+    $type = LoanType::tryFrom($data['type']);
+
+    if (! $type) {
+        echo json_encode(['error' => 'Invalid loan type.']);
+        exit;
+    }
+
+    $loan = $factory->create($type, (float) $data['principal'], (int) $data['months'], (float) $data['apr']);
 
     echo json_encode([
         'monthlyPayment' => $loan->getMonthlyPayment(),
