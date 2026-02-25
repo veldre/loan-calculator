@@ -3,7 +3,11 @@
 namespace Tests\Loan;
 
 use App\Exceptions\InvalidLoanException;
+use App\Exceptions\InvalidLoanTermException;
 use App\Loan\AnnuityLoan;
+use App\Loan\ValueObjects\Apr;
+use App\Loan\ValueObjects\LoanTerm;
+use App\Loan\ValueObjects\Money;
 use PHPUnit\Framework\TestCase;
 
 class AnnuityLoanValidationTest extends TestCase
@@ -12,20 +16,20 @@ class AnnuityLoanValidationTest extends TestCase
     {
         $this->expectException(InvalidLoanException::class);
 
-        new AnnuityLoan(0, 12, 5);
+        new AnnuityLoan(Money::fromFloat(0), new LoanTerm(12), new Apr(5));
     }
 
     public function test_months_must_be_greater_than_zero(): void
     {
-        $this->expectException(InvalidLoanException::class);
+        $this->expectException(InvalidLoanTermException::class);
 
-        new AnnuityLoan(1000, 0, 5);
+        new AnnuityLoan(Money::fromFloat(1000), new LoanTerm(0), new Apr(5));
     }
 
     public function test_apr_cannot_be_negative(): void
     {
         $this->expectException(InvalidLoanException::class);
 
-        new AnnuityLoan(1000, 12, -1);
+        new AnnuityLoan(Money::fromFloat(1000), new LoanTerm(12), new Apr(-1));
     }
 }

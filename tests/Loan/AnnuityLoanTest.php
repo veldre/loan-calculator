@@ -3,6 +3,9 @@
 namespace Tests\Loan;
 
 use App\Loan\AnnuityLoan;
+use App\Loan\ValueObjects\Apr;
+use App\Loan\ValueObjects\LoanTerm;
+use App\Loan\ValueObjects\Money;
 use PHPUnit\Framework\TestCase;
 
 class AnnuityLoanTest extends TestCase
@@ -21,8 +24,8 @@ class AnnuityLoanTest extends TestCase
     
     public function setUp(): void
     {
-        $this->standardLoan = new AnnuityLoan(self::STANDARD_LOAN_PRINCIPAL, self::STANDARD_LOAN_MONTHS, self::STANDARD_LOAN_APR);
-        $this->zeroInterestLoan = new AnnuityLoan(self::ZERO_INTEREST_LOAN_PRINCIPAL, self::ZERO_INTEREST_LOAN_MONTHS, self::ZERO_INTEREST_LOAN_APR);
+        $this->standardLoan = new AnnuityLoan(Money::fromFloat(self::STANDARD_LOAN_PRINCIPAL), new LoanTerm(self::STANDARD_LOAN_MONTHS), new Apr(self::STANDARD_LOAN_APR));
+        $this->zeroInterestLoan = new AnnuityLoan(Money::fromFloat(self::ZERO_INTEREST_LOAN_PRINCIPAL), new LoanTerm(self::ZERO_INTEREST_LOAN_MONTHS), new Apr(self::ZERO_INTEREST_LOAN_APR));
     }
 
     public function test_monthly_payment_for_standard_annuity_loan(): void
@@ -75,7 +78,7 @@ class AnnuityLoanTest extends TestCase
 
     public function test_first_month_of_amortization_schedule(): void
     {
-        $loan = new AnnuityLoan(1000, 12, 5);
+        $loan = new AnnuityLoan(Money::fromFloat(1000), new LoanTerm(12), new Apr(5));
 
         $schedule = $loan->getAmortizationSchedule();
 
@@ -86,7 +89,7 @@ class AnnuityLoanTest extends TestCase
 
     public function test_last_month_balance_is_zero(): void
     {
-        $loan = new AnnuityLoan(6000, 12, 5);
+        $loan = new AnnuityLoan(Money::fromFloat(6000), new LoanTerm(12), new Apr(5));
 
         $schedule = $loan->getAmortizationSchedule();
 

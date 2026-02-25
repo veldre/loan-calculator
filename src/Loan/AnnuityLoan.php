@@ -1,27 +1,33 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Loan;
 
 use App\Exceptions\InvalidLoanException;
+use App\Loan\ValueObjects\Apr;
+use App\Loan\ValueObjects\LoanTerm;
+use App\Loan\ValueObjects\Money;
 
 class AnnuityLoan implements LoanInterface
 {
-    public function __construct(private float $principal, private int $months, private float $apr)
+    public function __construct(private Money $principal, private LoanTerm $term, private Apr $apr)
     {
-        $this->assertValid();
+        if ($this->principal->cents() === 0) {
+            throw new InvalidLoanException('Principal must be greater than 0.');
+        }
     }
 
     public function getMonthlyPayment(): float
     {
-        if ($this->apr === 0.0) {
-            return round($this->principal / $this->months, 2);
+        if ($this->apr->isZero()) {
+            return round($this->principal->toFloat() / $this->term->months(), 2);
         }
 
-        $monthlyRate = $this->apr / 100 / 12;
+        $monthlyRate = $this->apr->monthlyRate();
         $growthFactor = 1 + $monthlyRate;
-        $discountFactor = pow($growthFactor, -$this->months);
+        $discountFactor = pow($growthFactor, -$this->term->months());
         $annuityFactor = $monthlyRate / (1 - $discountFactor);
-        $payment = $this->principal * $annuityFactor;
+        $payment = $this->principal->toFloat() * $annuityFactor;
 
         return round($payment, 2);
     }
@@ -44,19 +50,19 @@ class AnnuityLoan implements LoanInterface
     {
         $schedule = [];
 
-        $balance = $this->principal;
+        $balance = $this->principal->toFloat();
         $monthlyPayment = $this->getMonthlyPayment();
-        $monthlyRate = $this->apr / 100 / 12;
+        $monthlyRate = $this->apr->monthlyRate();
 
-        for ($month = 1; $month <= $this->months; $month++) {
+        for ($month = 1; $month <= $this->term->months(); $month++) {
 
-            if ($this->apr === 0.0) {
+            if ($this->apr->isZero()) {
                 $interest = 0.0;
             } else {
                 $interest = round($balance * $monthlyRate, 2);
             }
 
-            if ($month === $this->months) {
+            if ($month === $this->term->months()) {
                 // last month adjustment because of rounding discrepancies
                 $principal = $balance;
                 $payment = round($principal + $interest, 2);
@@ -77,20 +83,5 @@ class AnnuityLoan implements LoanInterface
         }
 
         return $schedule;
-    }
-
-    private function assertValid(): void
-    {
-        if ($this->principal <= 0) {
-            throw new InvalidLoanException('Principal must be greater than 0.');
-        }
-
-        if ($this->months <= 0) {
-            throw new InvalidLoanException('Loan term must be greater than 0.');
-        }
-
-        if ($this->apr < 0) {
-            throw new InvalidLoanException('APR cannot be negative.');
-        }
     }
 }

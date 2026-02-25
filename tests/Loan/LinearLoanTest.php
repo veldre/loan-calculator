@@ -3,6 +3,9 @@
 namespace Tests\Loan;
 
 use App\Loan\LinearLoan;
+use App\Loan\ValueObjects\Apr;
+use App\Loan\ValueObjects\LoanTerm;
+use App\Loan\ValueObjects\Money;
 use PHPUnit\Framework\TestCase;
 
 class LinearLoanTest extends TestCase
@@ -21,8 +24,8 @@ class LinearLoanTest extends TestCase
 
     public function setUp(): void
     {
-        $this->standardLoan = new LinearLoan(self::STANDARD_LOAN_PRINCIPAL, self::STANDARD_LOAN_MONTHS, self::STANDARD_LOAN_APR);
-        $this->zeroInterestLoan = new LinearLoan(self::ZERO_INTEREST_LOAN_PRINCIPAL, self::ZERO_INTEREST_LOAN_MONTHS, self::ZERO_INTEREST_LOAN_APR);
+        $this->standardLoan = new LinearLoan(Money::fromFloat(self::STANDARD_LOAN_PRINCIPAL), new LoanTerm(self::STANDARD_LOAN_MONTHS), new Apr(self::STANDARD_LOAN_APR));
+        $this->zeroInterestLoan = new LinearLoan(Money::fromFloat(self::ZERO_INTEREST_LOAN_PRINCIPAL), new LoanTerm(self::ZERO_INTEREST_LOAN_MONTHS), new Apr(self::ZERO_INTEREST_LOAN_APR));
     }
 
     public function test_first_payment_is_greater_than_last_payment(): void
