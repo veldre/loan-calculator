@@ -2,8 +2,8 @@
 
 namespace App\Exceptions;
 
-use InvalidArgumentException;
+use DomainException;
 
-class InvalidLoanException extends InvalidArgumentException
+class InvalidLoanException extends DomainException
 {
 }

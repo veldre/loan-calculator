@@ -37,11 +37,21 @@ try {
 
     $loan = $factory->create($type, (float) $data['principal'], (int) $data['months'], (float) $data['apr']);
 
+    $schedule = array_map(function ($row) {
+        return [
+            'month' => $row['month'],
+            'payment' => $row['payment']->toFloat(),
+            'interest' => $row['interest']->toFloat(),
+            'principal' => $row['principal']->toFloat(),
+            'balance' => $row['balance']->toFloat(),
+        ];
+    }, $loan->getAmortizationSchedule());
+
     echo json_encode([
-        'monthlyPayment' => $loan->getMonthlyPayment(),
-        'totalInterest' => $loan->getTotalInterest(),
-        'totalRepayment' => $loan->getTotalRepayment(),
-        'schedule' => $loan->getAmortizationSchedule(),
+        'monthlyPayment' => $loan->getMonthlyPayment()->toFloat(),
+        'totalInterest' => $loan->getTotalInterest()->toFloat(),
+        'totalRepayment' => $loan->getTotalRepayment()->toFloat(),
+        'schedule' => $schedule,
     ]);
 
 } catch (InvalidLoanException $e) {

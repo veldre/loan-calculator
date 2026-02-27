@@ -1,96 +1,96 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Loan;
 
-use App\Exceptions\InvalidLoanException;
+use App\Loan\ValueObjects\Apr;
+use App\Loan\ValueObjects\LoanTerm;
+use App\Loan\ValueObjects\Money;
 
 class AnnuityLoan implements LoanInterface
 {
-    public function __construct(private float $principal, private int $months, private float $apr)
+    public function __construct(private Money $principal, private LoanTerm $term, private Apr $apr)
     {
-        $this->assertValid();
     }
 
-    public function getMonthlyPayment(): float
+    public function getMonthlyPayment(): Money
     {
-        if ($this->apr === 0.0) {
-            return round($this->principal / $this->months, 2);
+        $principalCents = $this->principal->cents();
+        $months = $this->term->months();
+
+        if ($this->apr->isZero()) {
+            $monthlyCents = (int) round($principalCents / $months);
+
+            return Money::fromCents($monthlyCents);
         }
 
-        $monthlyRate = $this->apr / 100 / 12;
+        $monthlyRate = $this->apr->monthlyRate();
+
         $growthFactor = 1 + $monthlyRate;
-        $discountFactor = pow($growthFactor, -$this->months);
+        $discountFactor = pow($growthFactor, -$months);
         $annuityFactor = $monthlyRate / (1 - $discountFactor);
-        $payment = $this->principal * $annuityFactor;
 
-        return round($payment, 2);
+        $monthlyCents = (int) round($principalCents * $annuityFactor);
+
+        return Money::fromCents($monthlyCents);
     }
 
-    public function getTotalRepayment(): float
+    public function getTotalRepayment(): Money
     {
-        $payments = array_column($this->getAmortizationSchedule(), 'payment');
+        $totalCents = 0;
+        $schedule = $this->getAmortizationSchedule();
 
-        return round(array_sum($payments), 2);
+        foreach ($schedule as $row) {
+            $totalCents += $row['payment']->cents();
+        }
+
+        return Money::fromCents($totalCents);
     }
 
-    public function getTotalInterest(): float
+    public function getTotalInterest(): Money
     {
-        $interest = array_column($this->getAmortizationSchedule(), 'interest');
+        $totalCents = 0;
+        $schedule = $this->getAmortizationSchedule();
 
-        return round(array_sum($interest), 2);
+        foreach ($schedule as $row) {
+            $totalCents += $row['interest']->cents();
+        }
+
+        return Money::fromCents($totalCents);
     }
 
     public function getAmortizationSchedule(): array
     {
         $schedule = [];
 
-        $balance = $this->principal;
-        $monthlyPayment = $this->getMonthlyPayment();
-        $monthlyRate = $this->apr / 100 / 12;
+        $balanceCents = $this->principal->cents();
+        $monthlyPaymentCents = $this->getMonthlyPayment()->cents();
+        $monthlyRate = $this->apr->monthlyRate();
+        $months = $this->term->months();
 
-        for ($month = 1; $month <= $this->months; $month++) {
+        for ($month = 1; $month <= $months; $month++) {
 
-            if ($this->apr === 0.0) {
-                $interest = 0.0;
+            $interestCents = $this->apr->isZero() ? 0 : (int) round($balanceCents * $monthlyRate);
+
+            if ($month === $months) {
+                $principalCents = $balanceCents;
+                $paymentCents = $principalCents + $interestCents;
+                $balanceCents = 0;
             } else {
-                $interest = round($balance * $monthlyRate, 2);
-            }
-
-            if ($month === $this->months) {
-                // last month adjustment because of rounding discrepancies
-                $principal = $balance;
-                $payment = round($principal + $interest, 2);
-                $balance = 0.0;
-            } else {
-                $payment = $monthlyPayment;
-                $principal = round($payment - $interest, 2);
-                $balance = round($balance - $principal, 2);
+                $paymentCents = $monthlyPaymentCents;
+                $principalCents = $paymentCents - $interestCents;
+                $balanceCents -= $principalCents;
             }
 
             $schedule[] = [
                 'month' => $month,
-                'payment' => $payment,
-                'interest' => $interest,
-                'principal' => $principal,
-                'balance' => $balance,
+                'payment' => Money::fromCents($paymentCents),
+                'interest' => Money::fromCents($interestCents),
+                'principal' => Money::fromCents($principalCents),
+                'balance' => Money::fromCents($balanceCents),
             ];
         }
 
         return $schedule;
-    }
-
-    private function assertValid(): void
-    {
-        if ($this->principal <= 0) {
-            throw new InvalidLoanException('Principal must be greater than 0.');
-        }
-
-        if ($this->months <= 0) {
-            throw new InvalidLoanException('Loan term must be greater than 0.');
-        }
-
-        if ($this->apr < 0) {
-            throw new InvalidLoanException('APR cannot be negative.');
-        }
     }
 }

@@ -3,6 +3,9 @@
 namespace Tests\Loan;
 
 use App\Loan\AnnuityLoan;
+use App\Loan\ValueObjects\Apr;
+use App\Loan\ValueObjects\LoanTerm;
+use App\Loan\ValueObjects\Money;
 use PHPUnit\Framework\TestCase;
 
 class AnnuityLoanTest extends TestCase
@@ -21,78 +24,84 @@ class AnnuityLoanTest extends TestCase
     
     public function setUp(): void
     {
-        $this->standardLoan = new AnnuityLoan(self::STANDARD_LOAN_PRINCIPAL, self::STANDARD_LOAN_MONTHS, self::STANDARD_LOAN_APR);
-        $this->zeroInterestLoan = new AnnuityLoan(self::ZERO_INTEREST_LOAN_PRINCIPAL, self::ZERO_INTEREST_LOAN_MONTHS, self::ZERO_INTEREST_LOAN_APR);
+        $this->standardLoan = new AnnuityLoan(Money::fromFloat(self::STANDARD_LOAN_PRINCIPAL), new LoanTerm(self::STANDARD_LOAN_MONTHS), new Apr(self::STANDARD_LOAN_APR));
+        $this->zeroInterestLoan = new AnnuityLoan(Money::fromFloat(self::ZERO_INTEREST_LOAN_PRINCIPAL), new LoanTerm(self::ZERO_INTEREST_LOAN_MONTHS), new Apr(self::ZERO_INTEREST_LOAN_APR));
     }
 
     public function test_monthly_payment_for_standard_annuity_loan(): void
     {
-        $this->assertEquals(536.82, $this->standardLoan->getMonthlyPayment());
+        $this->assertSame(53682, $this->standardLoan->getMonthlyPayment()->cents());
     }
 
     public function test_monthly_payment_when_interest_is_zero(): void
     {
-        $this->assertEquals(500.00, $this->zeroInterestLoan->getMonthlyPayment());
+        $this->assertSame(50000, $this->zeroInterestLoan->getMonthlyPayment()->cents());
     }
 
     public function test_total_repayment_for_standard_annuity_loan(): void
     {
-        $this->assertEquals(
-            round(self::STANDARD_LOAN_PRINCIPAL + $this->standardLoan->getTotalInterest(), 2),
-            round($this->standardLoan->getTotalRepayment(), 2)
+        $this->assertSame(
+            self::STANDARD_LOAN_PRINCIPAL * 100 + $this->standardLoan->getTotalInterest()->cents(),
+            $this->standardLoan->getTotalRepayment()->cents()
         );
     }
 
     public function test_zero_interest_loan_has_no_interest(): void
     {
-        $this->assertEquals(0.00, $this->zeroInterestLoan->getTotalInterest());
+        $this->assertSame(0, $this->zeroInterestLoan->getTotalInterest()->cents());
     }
 
     public function test_total_repayment_equals_principal_when_interest_is_zero(): void
     {
-        $this->assertEquals(self::ZERO_INTEREST_LOAN_PRINCIPAL, $this->zeroInterestLoan->getTotalRepayment());
+        $this->assertSame(self::ZERO_INTEREST_LOAN_PRINCIPAL * 100, $this->zeroInterestLoan->getTotalRepayment()->cents());
     }
 
     public function test_total_principal_paid_equals_original_principal(): void
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $principal = array_column($schedule, 'principal');
+        $totalPrincipalCents = 0;
 
-        $this->assertEquals(self::STANDARD_LOAN_PRINCIPAL, round(array_sum($principal), 2));
+        foreach ($schedule as $row) {
+            $totalPrincipalCents += $row['principal']->cents();
+        }
+
+        $this->assertSame(self::STANDARD_LOAN_PRINCIPAL * 100,   $totalPrincipalCents);
     }
 
     public function test_total_interest_equals_sum_of_schedule_interest(): void
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $interest = array_column($schedule, 'interest');
+        $totalInterestCents = 0;
 
-        $expected = round(array_sum($interest), 2);
+        foreach ($schedule as $row) {
+            $totalInterestCents += $row['interest']->cents();
+        }
 
-        $this->assertEquals($expected, $this->standardLoan->getTotalInterest());
+        $this->assertSame($totalInterestCents, $this->standardLoan->getTotalInterest()->cents());
     }
 
     public function test_first_month_of_amortization_schedule(): void
     {
-        $loan = new AnnuityLoan(1000, 12, 5);
+        $loan = new AnnuityLoan(Money::fromFloat(1000), new LoanTerm(12), new Apr(5));
 
         $schedule = $loan->getAmortizationSchedule();
 
-        $this->assertEquals(1, $schedule[0]['month']);
-        $this->assertEquals(4.17, $schedule[0]['interest']);
-        $this->assertEquals(81.44, $schedule[0]['principal']);
+        $this->assertSame(1, $schedule[0]['month']);
+        $this->assertSame(417, $schedule[0]['interest']->cents());
+        $this->assertSame(8144, $schedule[0]['principal']->cents());
     }
 
     public function test_last_month_balance_is_zero(): void
     {
-        $loan = new AnnuityLoan(6000, 12, 5);
+        $loan = new AnnuityLoan(Money::fromFloat(6000), new LoanTerm(12), new Apr(5));
 
         $schedule = $loan->getAmortizationSchedule();
 
         $lastMonth = $schedule[count($schedule) - 1];
 
-        $this->assertEquals(0.00, $lastMonth['balance']);
+        $this->assertSame(0, $lastMonth['balance']->cents());
     }
 
     public function test_schedule_contains_correct_number_of_months(): void
