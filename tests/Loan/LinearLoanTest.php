@@ -32,7 +32,7 @@ class LinearLoanTest extends TestCase
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $this->assertGreaterThan($schedule[count($schedule) - 1]['payment'], $schedule[0]['payment']);
+        $this->assertGreaterThan($schedule[count($schedule) - 1]['payment']->cents(), $schedule[0]['payment']->cents());
     }
 
     public function test_payments_decrease_over_time(): void
@@ -40,7 +40,7 @@ class LinearLoanTest extends TestCase
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
         for ($i = 1; $i < count($schedule); $i++) {
-            $this->assertLessThan($schedule[$i - 1]['payment'], $schedule[$i]['payment']);
+            $this->assertLessThan($schedule[$i - 1]['payment']->cents(), $schedule[$i]['payment']->cents());
         }
     }
 
@@ -48,35 +48,39 @@ class LinearLoanTest extends TestCase
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $firstPrincipal = $schedule[0]['principal'];
+        $firstPrincipal = $schedule[0]['principal']->cents();
 
         for ($i = 1; $i < count($schedule) - 1; $i++) {
-            $this->assertEquals($firstPrincipal, $schedule[$i]['principal']);
+            $this->assertSame($firstPrincipal, $schedule[$i]['principal']->cents());
         }
     }
 
     public function test_zero_interest_loan_has_no_interest(): void
     {
-        $this->assertEquals(0.00, $this->zeroInterestLoan->getTotalInterest());
+        $this->assertSame(0, $this->zeroInterestLoan->getTotalInterest()->cents());
     }
 
     public function test_total_principal_paid_equals_original_principal(): void
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $principal = array_column($schedule, 'principal');
+        $totalPrincipalCents = 0;
 
-        $this->assertEquals(self::STANDARD_LOAN_PRINCIPAL, round(array_sum($principal), 2));
+        foreach ($schedule as $row) {
+            $totalPrincipalCents += $row['principal']->cents();
+        }
+
+        $this->assertSame(self::STANDARD_LOAN_PRINCIPAL * 100, $totalPrincipalCents);
     }
 
     public function test_zero_interest_payments_equal_principal_portion(): void
     {
         $schedule = $this->zeroInterestLoan->getAmortizationSchedule();
 
-        $expectedPrincipal = round(self::ZERO_INTEREST_LOAN_PRINCIPAL / self::ZERO_INTEREST_LOAN_MONTHS, 2);
+        $expectedPrincipalCents = (int) round((self::ZERO_INTEREST_LOAN_PRINCIPAL * 100) / self::ZERO_INTEREST_LOAN_MONTHS);
 
         foreach ($schedule as $row) {
-            $this->assertEquals($expectedPrincipal, $row['payment']);
+            $this->assertSame($expectedPrincipalCents, $row['payment']->cents());
         }
     }
 
@@ -86,6 +90,6 @@ class LinearLoanTest extends TestCase
 
         $last = $schedule[count($schedule) - 1];
 
-        $this->assertEquals(0.00, $last['balance']);
+        $this->assertSame(0, $last['balance']->cents());
     }
 }

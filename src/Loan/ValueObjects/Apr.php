@@ -5,7 +5,6 @@ namespace App\Loan\ValueObjects;
 
 use App\Exceptions\InvalidRateException;
 
-
 final class Apr
 {
     private float $rate;

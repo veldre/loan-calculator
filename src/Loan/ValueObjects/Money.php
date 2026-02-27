@@ -5,7 +5,6 @@ namespace App\Loan\ValueObjects;
 
 use App\Exceptions\InvalidMoneyException;
 
-
 final class Money
 {
     private int $amountInCents;
@@ -24,6 +23,11 @@ final class Money
         return new self((int) round($amount * 100));
     }
 
+    public static function fromCents(int $cents): self
+    {
+        return new self($cents);
+    }
+    
     public function cents(): int
     {
         return $this->amountInCents;

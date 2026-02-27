@@ -30,50 +30,56 @@ class AnnuityLoanTest extends TestCase
 
     public function test_monthly_payment_for_standard_annuity_loan(): void
     {
-        $this->assertEquals(536.82, $this->standardLoan->getMonthlyPayment());
+        $this->assertSame(53682, $this->standardLoan->getMonthlyPayment()->cents());
     }
 
     public function test_monthly_payment_when_interest_is_zero(): void
     {
-        $this->assertEquals(500.00, $this->zeroInterestLoan->getMonthlyPayment());
+        $this->assertSame(50000, $this->zeroInterestLoan->getMonthlyPayment()->cents());
     }
 
     public function test_total_repayment_for_standard_annuity_loan(): void
     {
-        $this->assertEquals(
-            round(self::STANDARD_LOAN_PRINCIPAL + $this->standardLoan->getTotalInterest(), 2),
-            round($this->standardLoan->getTotalRepayment(), 2)
+        $this->assertSame(
+            self::STANDARD_LOAN_PRINCIPAL * 100 + $this->standardLoan->getTotalInterest()->cents(),
+            $this->standardLoan->getTotalRepayment()->cents()
         );
     }
 
     public function test_zero_interest_loan_has_no_interest(): void
     {
-        $this->assertEquals(0.00, $this->zeroInterestLoan->getTotalInterest());
+        $this->assertSame(0, $this->zeroInterestLoan->getTotalInterest()->cents());
     }
 
     public function test_total_repayment_equals_principal_when_interest_is_zero(): void
     {
-        $this->assertEquals(self::ZERO_INTEREST_LOAN_PRINCIPAL, $this->zeroInterestLoan->getTotalRepayment());
+        $this->assertSame(self::ZERO_INTEREST_LOAN_PRINCIPAL * 100, $this->zeroInterestLoan->getTotalRepayment()->cents());
     }
 
     public function test_total_principal_paid_equals_original_principal(): void
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $principal = array_column($schedule, 'principal');
+        $totalPrincipalCents = 0;
 
-        $this->assertEquals(self::STANDARD_LOAN_PRINCIPAL, round(array_sum($principal), 2));
+        foreach ($schedule as $row) {
+            $totalPrincipalCents += $row['principal']->cents();
+        }
+
+        $this->assertSame(self::STANDARD_LOAN_PRINCIPAL * 100,   $totalPrincipalCents);
     }
 
     public function test_total_interest_equals_sum_of_schedule_interest(): void
     {
         $schedule = $this->standardLoan->getAmortizationSchedule();
 
-        $interest = array_column($schedule, 'interest');
+        $totalInterestCents = 0;
 
-        $expected = round(array_sum($interest), 2);
+        foreach ($schedule as $row) {
+            $totalInterestCents += $row['interest']->cents();
+        }
 
-        $this->assertEquals($expected, $this->standardLoan->getTotalInterest());
+        $this->assertSame($totalInterestCents, $this->standardLoan->getTotalInterest()->cents());
     }
 
     public function test_first_month_of_amortization_schedule(): void
@@ -82,9 +88,9 @@ class AnnuityLoanTest extends TestCase
 
         $schedule = $loan->getAmortizationSchedule();
 
-        $this->assertEquals(1, $schedule[0]['month']);
-        $this->assertEquals(4.17, $schedule[0]['interest']);
-        $this->assertEquals(81.44, $schedule[0]['principal']);
+        $this->assertSame(1, $schedule[0]['month']);
+        $this->assertSame(417, $schedule[0]['interest']->cents());
+        $this->assertSame(8144, $schedule[0]['principal']->cents());
     }
 
     public function test_last_month_balance_is_zero(): void
@@ -95,7 +101,7 @@ class AnnuityLoanTest extends TestCase
 
         $lastMonth = $schedule[count($schedule) - 1];
 
-        $this->assertEquals(0.00, $lastMonth['balance']);
+        $this->assertSame(0, $lastMonth['balance']->cents());
     }
 
     public function test_schedule_contains_correct_number_of_months(): void
