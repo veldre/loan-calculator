@@ -2,13 +2,15 @@
 
 namespace App\Loan;
 
+use App\Loan\ValueObjects\Money;
+
 interface LoanInterface
 {
-    public function getMonthlyPayment(): float;
+    public function getMonthlyPayment(): Money;
 
-    public function getTotalRepayment(): float;
+    public function getTotalRepayment(): Money;
 
-    public function getTotalInterest(): float;
+    public function getTotalInterest(): Money;
 
     public function getAmortizationSchedule(): array;
 }
